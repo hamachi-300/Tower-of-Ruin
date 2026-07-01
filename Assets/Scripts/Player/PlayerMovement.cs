@@ -14,6 +14,9 @@ namespace TowerOfRuin
         private void Awake()
         {
             characterController = GetComponent<CharacterController>();
+            
+            // Print a test message when the game starts
+            Debug.Log("PlayerMovement script is Awake and ready!");
         }
 
         private void Update()
