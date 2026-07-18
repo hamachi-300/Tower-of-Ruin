@@ -38,4 +38,4 @@ git clone https://github.com/Hamachi-300/Tower-of-Ruin.git
 4. Launch the project. *(Note: First load will take a few minutes as Unity regenerates the local cache/library folders).*
 
 
-#### Unity 2021.3 LTS (2021.3.28f1)
+#### Unity 2022.3 LTS (2022.3.62f3)
