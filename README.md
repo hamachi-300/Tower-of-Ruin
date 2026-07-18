@@ -36,3 +36,6 @@ git clone https://github.com/Hamachi-300/Tower-of-Ruin.git
 2. Click **Add project from disk**.
 3. Select the cloned `Tower of Ruin` directory.
 4. Launch the project. *(Note: First load will take a few minutes as Unity regenerates the local cache/library folders).*
+
+
+#### Unity 2021.3 LTS (2021.3.28f1)
