@@ -19,6 +19,7 @@ namespace TowerOfRuin
         private float currentYaw;
         private float currentPitch;
         private Renderer playerRenderer;
+        private PlayerMovement playerMovement;
 
         private void Start()
         {
@@ -28,6 +29,7 @@ namespace TowerOfRuin
             if (target != null) 
             {
                 playerRenderer = target.GetComponent<Renderer>();
+                playerMovement = target.GetComponent<PlayerMovement>();
             }
             
             // Lock and hide cursor for smooth camera rotation
@@ -44,6 +46,7 @@ namespace TowerOfRuin
                 if (pm != null)
                 {
                     target = pm.transform;
+                    playerMovement = pm;
                 }
                 else
                 {
@@ -52,6 +55,7 @@ namespace TowerOfRuin
                     if (playerObj != null)
                     {
                         target = playerObj.transform;
+                        playerMovement = playerObj.GetComponent<PlayerMovement>();
                     }
                 }
             }
@@ -71,10 +75,27 @@ namespace TowerOfRuin
                 playerRenderer = target.GetComponent<Renderer>();
             }
 
-            // Get Mouse Input
-            currentYaw += Input.GetAxis("Mouse X") * mouseSensitivity;
-            currentPitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
-            currentPitch = Mathf.Clamp(currentPitch, pitchMin, pitchMax);
+            // Check if locked on enemy
+            if (playerMovement != null && playerMovement.LockOnTarget != null)
+            {
+                Vector3 dirToEnemy = playerMovement.LockOnTarget.position - target.position;
+                dirToEnemy.y = 0f;
+
+                if (dirToEnemy.magnitude > 0.1f) {
+
+                    Quaternion targetRot = Quaternion.LookRotation(dirToEnemy);
+                    currentYaw = Mathf.LerpAngle(currentYaw, targetRot.eulerAngles.y, smoothSpeed * Time.deltaTime);
+                    currentPitch = Mathf.Lerp(currentPitch, 15.0f, smoothSpeed * Time.deltaTime);
+                }
+            } 
+            else
+            {
+                // Not lock on statement 
+                // Get Mouse Input
+                currentYaw += Input.GetAxis("Mouse X") * mouseSensitivity;
+                currentPitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+                currentPitch = Mathf.Clamp(currentPitch, pitchMin, pitchMax);
+            }
 
             // Unlock cursor if ESC is pressed
             if (Input.GetKeyDown(KeyCode.Escape))

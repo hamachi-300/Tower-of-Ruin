@@ -20,16 +20,24 @@ namespace TowerOfRuin
         [SerializeField] private float rollDuration = 0.4f;
         [SerializeField] private float rollCooldown = 0.8f;
 
+        [Header("Lock-On Setting")]
+        [SerializeField] private float lockOnRange = 15.0f;
+        [SerializeField] private KeyCode lockOnKey = KeyCode.Q;
+
         private bool isRolling = false;
         private float rollTimer;
         private float cooldownTimer;
         private Vector3 rollDirection;
 
         private CharacterController characterController;
+        private Transform lockOnTarget = null;
 
         // Public getters so other scripts (like UI) can read stamina values
         public float CurrentStamina => currentStamina;
         public float MaxStamina => maxStamina;
+        public bool IsInvincible => isRolling;
+        public Transform LockOnTarget => lockOnTarget;
+        
 
         private void Awake()
         {
@@ -39,17 +47,25 @@ namespace TowerOfRuin
 
         private void Update()
         {
-            // 1. Tick Cooldown
+            // Tick Cooldown
             if (cooldownTimer > 0) cooldownTimer -= Time.deltaTime;
 
-            // 2. Regenerate Stamina smoothly when not rolling
+
+
+            // Regenerate Stamina smoothly when not rolling
             if (!isRolling && currentStamina < maxStamina)
             {
                 currentStamina += staminaRegenRate * Time.deltaTime;
                 currentStamina = Mathf.Clamp(currentStamina, 0f, maxStamina);
             }
 
-            // 3. Roll State Loop
+            // Check Lock-On Toggle Input
+            if (Input.GetKeyDown(lockOnKey))
+            {
+                ToggleLockOn();
+            }
+
+            // Roll State Loop
             if (isRolling)
             {
                 characterController.Move(rollDirection * rollSpeed * Time.deltaTime);
@@ -58,7 +74,7 @@ namespace TowerOfRuin
                 return; // Lock controls
             }
 
-            // 4. Normal Movement
+            // Normal Movement
             float horizontal = Input.GetAxisRaw("Horizontal");
             float vertical = Input.GetAxisRaw("Vertical");
             Vector3 inputDirection = new Vector3(horizontal, 0f, vertical).normalized;
@@ -71,14 +87,32 @@ namespace TowerOfRuin
 
             Vector3 moveDirection = forward * inputDirection.z + right * inputDirection.x;
 
+            // Seperate position movement from rotation
             if (inputDirection.magnitude >= 0.1f)
             {
                 characterController.Move(moveDirection * moveSpeed * Time.deltaTime);
+            }
+
+            // Lock-On with Rotation
+            if (lockOnTarget != null)
+            {
+                // Face lock-on target
+                Vector3 targetDir = lockOnTarget.position - transform.position;
+                targetDir.y = 0f;
+
+                if (targetDir.magnitude > 0.1f)
+                {
+                    Quaternion targetRotation = Quaternion.LookRotation(targetDir);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+                }
+            } 
+            else if (inputDirection.magnitude >= 0.1f)
+            {
                 Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
             }
 
-            // 5. Roll Input Check
+            // Roll Input Check
             if (Input.GetKeyDown(KeyCode.Space) && cooldownTimer <= 0 && currentStamina >= rollStaminaCost)
             {
                 rollDirection = inputDirection.magnitude >= 0.1f ? moveDirection : transform.forward;
@@ -88,6 +122,33 @@ namespace TowerOfRuin
 
                 currentStamina -= rollStaminaCost; // Consume stamina
             }
+        }
+
+        private void ToggleLockOn()
+        {
+            // Release lock-on
+            if (lockOnTarget != null)
+            {
+                lockOnTarget = null;
+                return;
+            }
+
+            // Lock-On
+            GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+            Transform closestEnemy = null;
+            float closestDistance = lockOnRange;
+
+            foreach (GameObject enemy in enemies)
+            {
+                float distance = Vector3.Distance(transform.position, enemy.transform.position);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestEnemy = enemy.transform;
+                }
+            }
+
+            lockOnTarget = closestEnemy;
         }
     }
 }
